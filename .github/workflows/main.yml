@@ -75,7 +75,7 @@ jobs:
             -o "StrictHostKeyChecking accept-new"
             -o "ControlMaster yes"
             -o "ControlPath $PWD/.github/ssh_control"
-            -o "ConnectTimeout 10"
+            -o "ConnectTimeout 1000"
             -i "$PWD/.github/ssh_key"
             -NTf -L 5000:127.0.0.1:5000
             "$REMOTE_USER@$REMOTE_HOST"
