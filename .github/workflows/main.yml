@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches:
+    - main
+    - staging
+  pull_request:
+    branches:
+    - main
+    - staging
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Print Env
+        env:
+          GHREF: ${{ github.ref }}
+        run: echo "$GHREF"
+
+      - uses: actions/cache@v3
+        id: docker-build-cache
+        with:
+          path: .github/docker-build-cache
+          key: ${{ runner.os }}-docker-build-cache-${{ hashFiles('.github/workflows/main.yml', 'Dockerfile', 'package.json', 'yarn.lock', 'package-lock.json', 'pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-docker-build-cache-
+
+      - name: Build
+        env:
+          GHREF: ${{ github.ref }}
+        run: |
+          set -eux
+
+          load_opt=
+          case "$GHREF" in
+          refs/heads/main)    load_opt=--load ;;
+          refs/heads/staging) load_opt=--load ;;
+          esac
+
+          # create buildkit builder
+          docker buildx create --use
+
+          # build
+          docker buildx build \
+            $load_opt \
+            --tag backend-setoko \
+            --progress   plain \
+            --cache-from type=local,src=.github/docker-build-cache \
+            --cache-to   type=local,dest=.github/docker-build-cache \
+            .
+
+      - name: Deploy to server
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          GHREF: ${{ github.ref }}
+        run: |
+          set -eux
+
+          case "$GHREF" in
+          refs/heads/main)    IMAGE=backend-setoko ;;
+          refs/heads/staging) IMAGE=backend-setoko-staging ;;
+          *) echo "unknow git ref target" >&2 && exit 1 ;;
+          esac
+
+          # prepare ssh master and port forward
+          printf %s\\n "$SSH_PRIVATE_KEY" > .github/ssh_key
+          chmod 0600 .github/ssh_key
+          ssh_master=(
+            -o "StrictHostKeyChecking accept-new"
+            -o "ControlMaster yes"
+            -o "ControlPath $PWD/.github/ssh_control"
+            -o "ConnectTimeout 10"
+            -i "$PWD/.github/ssh_key"
+            -NTf -L 5000:127.0.0.1:5000
+            "$REMOTE_USER@$REMOTE_HOST"
+          )
+          ssh_slave=(
+            -o "ControlPath $PWD/.github/ssh_control"
+            "$REMOTE_USER@$REMOTE_HOST"
+          )
+          ssh "${ssh_master[@]}"
+
+          # push docker image
+          docker tag backend-setoko localhost:5000/$IMAGE:latest
+          docker push               localhost:5000/$IMAGE:latest
+
+          # update it
+          ssh "${ssh_slave[@]}" ./app-docker/$IMAGE/app rotate_and_update
