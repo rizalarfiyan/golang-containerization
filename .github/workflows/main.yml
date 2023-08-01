@@ -36,7 +36,7 @@ jobs:
 
           load_opt=
           case "$GHREF" in
-          refs/heads/main)    load_opt=--load ;;
+          refs/heads/master)    load_opt=--load ;;
           refs/heads/staging) load_opt=--load ;;
           esac
 
@@ -53,7 +53,7 @@ jobs:
             .
 
       - name: Deploy to server
-        # if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
+        if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/staging'
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
@@ -63,7 +63,7 @@ jobs:
           set -eux
 
           case "$GHREF" in
-          refs/heads/main)    IMAGE=backend-setoko ;;
+          refs/heads/master)    IMAGE=backend-setoko ;;
           refs/heads/staging) IMAGE=backend-setoko-staging ;;
           *) echo "unknow git ref target" >&2 && exit 1 ;;
           esac
