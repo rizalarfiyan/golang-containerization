@@ -1,4 +1,4 @@
-FROM golang:1.20 as BASE
+FROM golang:1.20 as base
 USER golang
 WORKDIR /usr/src/app
 
