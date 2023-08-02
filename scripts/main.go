@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"golang-containerization/scripts/connection"
 	"log"
 	"net/http"
 	"os"
@@ -19,8 +20,14 @@ func main() {
 	router.Use(gin.Recovery())
 
 	router.GET("/", func(c *gin.Context) {
+		conn := connection.Connect()
+		defer conn.Close()
+
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Hello World!",
+			"health": gin.H{
+				"mySql": conn.Ping() != nil,
+			},
 		})
 	})
 
