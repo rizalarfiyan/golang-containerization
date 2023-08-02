@@ -49,9 +49,11 @@ jobs:
             "$REMOTE_USER@$REMOTE_HOST"
           )
           ssh_slave=(
+            -i "$PWD/.github/ssh_key"
             "$REMOTE_USER@$REMOTE_HOST"
           )
           ssh "${ssh_master[@]}"
 
           # update it
+          ssh "${ssh_slave[@]}" pwd
           ssh "${ssh_slave[@]}" ./app-docker/$IMAGE/app rotate_and_update
