@@ -7,6 +7,19 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
+      - name: Print Env
+        env:
+          GHREF: ${{ github.ref }}
+        run: echo "$GHREF"
+
+      - uses: actions/cache@v3
+        id: docker-build-cache
+        with:
+          path: .github/docker-build-cache
+          key: ${{ runner.os }}-docker-build-cache-${{ hashFiles('.github/workflows/main.yml', 'Dockerfile', 'package.json', 'yarn.lock', 'package-lock.json', 'pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-docker-build-cache-
+
       - name: Deploy to server
         if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/staging'
         env:
