@@ -49,8 +49,6 @@ jobs:
             "$REMOTE_USER@$REMOTE_HOST"
           )
           ssh_slave=(
-            -i "$PWD/.github/ssh_key"
-            -o "ConnectTimeout 10"
             "$REMOTE_USER@$REMOTE_HOST"
           )
           ssh "${ssh_master[@]}"
