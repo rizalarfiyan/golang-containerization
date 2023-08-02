@@ -2,16 +2,15 @@ FROM golang:1.20 as base
 WORKDIR /usr/src/app
 
 FROM base AS package
-# RUN apt-get update && apt-get install -y --no-install-recommends \
-#         libwebp-dev \
-#         xvfb \
-#         libfontconfig \
-#         wkhtmltopdf \
-#         libheif-dev \
-#         libvips \
-#         libvips-dev \
-#         libvips-tools \
-#         libheif-examples
+RUN set -eux; \
+        apt-get update; \
+        apt-get install -y --no-install-recommends \
+            wkhtmltopdf \
+            libwebp-dev \
+            libvips-dev \
+            libheif-examples\
+        ; \
+        rm -rf /var/lib/apt/lists/*
 
 FROM base AS modules
 COPY go.* .
