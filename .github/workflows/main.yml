@@ -91,4 +91,5 @@ jobs:
           docker push               localhost:5000/$IMAGE:latest
 
           # update it
-          ssh "${ssh_slave[@]}" ./app-docker/$IMAGE/app rotate_and_update
+          ssh "${ssh_slave[@]}" "cd app-docker/$IMAGE; ./app rotate_and_update"
+
