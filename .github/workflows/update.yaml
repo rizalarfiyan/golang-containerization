@@ -1,4 +1,4 @@
-name: CI
+name: Update Test
 
 on:
   workflow_dispatch:
@@ -24,10 +24,22 @@ jobs:
           esac
 
           # prepare ssh master and port forward
+          printf %s\\n "$SSH_PRIVATE_KEY" > .github/ssh_key
+          chmod 0600 .github/ssh_key
+          ssh_master=(
+            -o "StrictHostKeyChecking accept-new"
+            -o "ControlMaster yes"
+            -o "ControlPath $PWD/.github/ssh_control"
+            -o "ConnectTimeout 1000"
+            -i "$PWD/.github/ssh_key"
+            -NTf -L 5000:127.0.0.1:5000
+            "$REMOTE_USER@$REMOTE_HOST"
+          )
           ssh_slave=(
             -o "ControlPath $PWD/.github/ssh_control"
             "$REMOTE_USER@$REMOTE_HOST"
           )
+          ssh "${ssh_master[@]}"
 
           # update it
           ssh "${ssh_slave[@]}" ./app-docker/$IMAGE/app rotate_and_update
