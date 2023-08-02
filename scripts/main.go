@@ -14,6 +14,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type Status struct {
+	Health  bool   `json:"health"`
+	Message string `json:"message"`
+}
+
 func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
@@ -23,10 +28,20 @@ func main() {
 		conn := connection.Connect()
 		defer conn.Close()
 
+		errMysql := conn.Ping()
+		mysql := Status{
+			Health:  errMysql == nil,
+			Message: "MySQL is connected",
+		}
+
+		if errMysql != nil {
+			mysql.Message = errMysql.Error()
+		}
+
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Hello World!",
 			"health": gin.H{
-				"mySql": conn.Ping() != nil,
+				"mysql": mysql,
 			},
 		})
 	})

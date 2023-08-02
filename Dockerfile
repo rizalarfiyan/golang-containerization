@@ -1,7 +1,7 @@
 FROM golang:1.20 as base
 WORKDIR /usr/src/app
 
-# FROM base AS package
+FROM base AS package
 # RUN apt-get update && apt-get install -y --no-install-recommends \
 #         libwebp-dev \
 #         xvfb \
@@ -15,10 +15,13 @@ WORKDIR /usr/src/app
 
 FROM base AS modules
 COPY go.* .
-RUN go mod download
+RUN go mod tidy
 
-FROM base AS app
 COPY . .
 RUN cd ./scripts && go build main.go
 
-CMD ["./scripts/main"]
+FROM package AS app
+COPY --from=modules /usr/src/app/scripts/main .
+COPY --from=modules /usr/src/app/scripts/assets ./assets
+
+CMD ["./main"]

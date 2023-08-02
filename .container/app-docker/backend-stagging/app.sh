@@ -12,8 +12,10 @@ PORT=$(grep -oP '(?<=PORT=)\d+' $ENV)
 image=localhost:5000/backend-setoko-stagging:latest
 opts="
     --restart=always
+    --net=host
     --env-file=$ENV
     -e PORT=$PORT
+    -e LOG_PATH=/var/log/setoko/today.log
     -v "$PWD/log":/var/log/setoko
     -v /var/www/html:/var/www/html
     -p $PORT:$PORT
