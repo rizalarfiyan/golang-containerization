@@ -86,6 +86,9 @@ jobs:
           )
           ssh "${ssh_master[@]}"
 
+          pwd
+          ls -la
+
           # push docker image
           docker tag backend-setoko localhost:5000/$IMAGE:latest
           docker push               localhost:5000/$IMAGE:latest
